@@ -6,7 +6,6 @@ import (
 	"os"
 	"strconv"
 	"sync"
-	"time"
 )
 
 func MergeSort(ssTable *SsTable) {
