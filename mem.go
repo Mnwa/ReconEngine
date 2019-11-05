@@ -24,7 +24,7 @@ func (m *Mem) Get(key []byte) ([]byte, error) {
 		return nil, KeyNotFoundErr
 	}
 	if !ok {
-		return m.Get(key)
+		return m.ssTable.Get(key)
 	}
 	return val, nil
 }
