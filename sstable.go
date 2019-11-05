@@ -21,6 +21,7 @@ func (sspK SsTablePartitionKeys) Len() int           { return len(sspK) }
 func (sspK SsTablePartitionKeys) Swap(i, j int)      { sspK[i], sspK[j] = sspK[j], sspK[i] }
 func (sspK SsTablePartitionKeys) Less(i, j int) bool { return sspK[i] > sspK[j] }
 
+// Ss table realisation
 type SsTable struct {
 	OpenedPartitions         SsTablePartitions
 	PossibleToOpenPartitions SsTablePartitionKeys
@@ -28,7 +29,6 @@ type SsTable struct {
 
 func (ss *SsTable) CreatePartition() *SStablePartition {
 	ssp := ss.OpenPartition(time.Now().Unix())
-	ssp.isLoaded = false
 	return ssp
 }
 

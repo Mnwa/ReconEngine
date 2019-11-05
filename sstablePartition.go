@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/gob"
+	"errors"
 	"io"
 	"log"
 	"os"
@@ -20,6 +21,9 @@ type Index struct {
 	Length int32
 }
 
+var ReadOnlyPartModErr = errors.New("try to modify read only partition")
+
+// It's a part of ss table, loaded parts can be a readOnly
 type SStablePartition struct {
 	createdAt int64
 	Index     map[string]Index
@@ -52,6 +56,9 @@ func (ssp *SStablePartition) Get(key []byte) ([]byte, error) {
 }
 
 func (ssp *SStablePartition) Set(key []byte, value []byte) error {
+	if ssp.isLoaded {
+		return ReadOnlyPartModErr
+	}
 	n, err := ssp.fd.Write(value)
 	if err != nil {
 		return err
@@ -129,6 +136,10 @@ func NewSStablePartition(createdAt int64) *SStablePartition {
 	if err != nil {
 		log.Panic(err)
 	}
+	fi, err := fd.Stat()
+	if err != nil {
+		log.Panic(err)
+	}
 	index, err := createIndex(createdAt)
 	if err != nil && err != io.EOF {
 		log.Panic(err)
@@ -138,6 +149,6 @@ func NewSStablePartition(createdAt int64) *SStablePartition {
 		createdAt: createdAt,
 		fd:        fd,
 		Index:     index,
-		isLoaded:  true,
+		isLoaded:  fi.Size() == 0,
 	}
 }

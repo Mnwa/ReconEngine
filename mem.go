@@ -7,12 +7,16 @@ import (
 	"sync"
 )
 
+// Memory table
 type Mem struct {
 	storage map[string][]byte
 	ssTable *SsTable
 }
 
+// Key not found error
 var KeyNotFoundErr = errors.New("can't found value by that key")
+
+// Removed key error
 var KeyRemovedErr = errors.New("that key was removed")
 
 func (m *Mem) Get(key []byte) ([]byte, error) {
@@ -62,6 +66,7 @@ func (m *Mem) Len() int {
 	return len(m.storage)
 }
 
+// Create mem table
 func NewMem(ssTable *SsTable) *Mem {
 	return &Mem{
 		storage: make(map[string][]byte),

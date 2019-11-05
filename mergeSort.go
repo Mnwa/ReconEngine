@@ -8,6 +8,7 @@ import (
 	"sync"
 )
 
+// Merge sort algoritm (merge old partitions in bigger one)
 func MergeSort(ssTable *SsTable) {
 	var mx sync.Mutex
 	mx.Lock()
