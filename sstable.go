@@ -28,7 +28,7 @@ type SsTable struct {
 }
 
 func (ss *SsTable) CreatePartition() *SStablePartition {
-	ssp := ss.OpenPartition(time.Now().Unix())
+	ssp := ss.OpenPartition(time.Now().UnixNano())
 	return ssp
 }
 
@@ -137,7 +137,7 @@ func (ss *SsTable) CloseAll() error {
 
 func NewSsTable() *SsTable {
 	var SsTable = &SsTable{}
-	fileInfos, err := ioutil.ReadDir("./bin")
+	fileInfos, err := ioutil.ReadDir(BinDir)
 	if err != nil {
 		log.Panic(err)
 	}

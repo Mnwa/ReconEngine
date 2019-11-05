@@ -149,6 +149,6 @@ func NewSStablePartition(createdAt int64) *SStablePartition {
 		createdAt: createdAt,
 		fd:        fd,
 		Index:     index,
-		isLoaded:  fi.Size() == 0,
+		isLoaded:  fi.Size() != 0,
 	}
 }

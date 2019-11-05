@@ -3,7 +3,6 @@ package reconEngine
 import (
 	"bytes"
 	"errors"
-	"log"
 	"sync"
 )
 
@@ -21,7 +20,7 @@ var KeyRemovedErr = errors.New("that key was removed")
 
 func (m *Mem) Get(key []byte) ([]byte, error) {
 	val, ok := m.storage[string(key)]
-	if !ok && bytes.Equal(val, []byte{removed}) {
+	if ok && bytes.Equal(val, []byte{removed}) {
 		return nil, KeyNotFoundErr
 	}
 	if !ok {
@@ -43,23 +42,20 @@ func (m *Mem) Del(key []byte) error {
 	return nil
 }
 
-func (m *Mem) Sync() {
+func (m *Mem) Sync() error {
 	var mx sync.Mutex
 	mx.Lock()
+	defer mx.Unlock()
 	ssp := m.ssTable.CreatePartition()
 	for k, v := range m.storage {
 		err := ssp.Set([]byte(k), v)
 		if err != nil {
-			log.Fatal(err)
+			return err
 		} else {
 			delete(m.storage, k)
 		}
 	}
-	err := m.ssTable.ClosePartition(ssp)
-	if err != nil {
-		log.Fatal(err)
-	}
-	mx.Unlock()
+	return m.ssTable.ClosePartition(ssp)
 }
 
 func (m *Mem) Len() int {

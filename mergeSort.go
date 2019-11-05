@@ -4,20 +4,20 @@ import (
 	"bytes"
 	"log"
 	"os"
-	"strconv"
 	"sync"
 )
 
 // Merge sort algoritm (merge old partitions in bigger one)
-func MergeSort(ssTable *SsTable) {
+func MergeSort(ssTable *SsTable) error {
 	var mx sync.Mutex
 	mx.Lock()
+	defer mx.Unlock()
 	err := ssTable.CloseAll()
 	if err != nil {
 		log.Fatal(err)
 	}
 	if len(ssTable.PossibleToOpenPartitions) <= 1 {
-		return
+		return nil
 	}
 	firstC := ssTable.PossibleToOpenPartitions[0]
 	values := make(map[string][]byte)
@@ -27,7 +27,7 @@ func MergeSort(ssTable *SsTable) {
 			if _, ok := values[k]; !ok {
 				v, err := p.Get([]byte(k))
 				if err != nil && err != KeyRemovedErr {
-					log.Fatal(err)
+					return err
 				} else {
 					values[k] = v
 				}
@@ -35,15 +35,15 @@ func MergeSort(ssTable *SsTable) {
 		}
 		err = ssTable.ClosePartition(p)
 		if err != nil {
-			log.Fatal(err)
+			return err
 		} else {
-			err := os.Remove("bin/" + strconv.FormatInt(p.createdAt, 10) + "-partition.bin")
+			err := os.Remove(makePath("partition", p.createdAt))
 			if err != nil {
-				log.Fatal(err)
+				return err
 			}
-			err = os.Remove("bin/" + strconv.FormatInt(p.createdAt, 10) + "-index.bin")
+			err = os.Remove(makePath("index", p.createdAt))
 			if err != nil {
-				log.Fatal(err)
+				return err
 			}
 		}
 	}
@@ -52,11 +52,11 @@ func MergeSort(ssTable *SsTable) {
 		if !bytes.Equal(v, []byte{removed}) {
 			err := ssp.Set([]byte(k), v)
 			if err != nil {
-				log.Fatal(err)
+				return err
 			}
 		}
 	}
 	ssTable.PossibleToOpenPartitions = make(SsTablePartitionKeys, 0)
 	ssTable.OpenedPartitions = SsTablePartitions{ssp}
-	mx.Unlock()
+	return nil
 }
