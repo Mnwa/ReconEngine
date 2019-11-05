@@ -7,10 +7,13 @@ import (
 	"io"
 	"log"
 	"os"
+	"path"
 	"strconv"
 )
 
 const removed = 0x04
+
+var BinDir = "bin"
 
 type Index struct {
 	Offset int64
@@ -86,7 +89,7 @@ func (ssp *SStablePartition) Close() error {
 }
 
 func createIndex(createdAt int64) (index map[string]Index, err error) {
-	fd, err := os.OpenFile("bin/"+strconv.FormatInt(createdAt, 10)+"-index.bin", os.O_RDONLY|os.O_CREATE, 0644)
+	fd, err := os.OpenFile(makePath("index", createdAt), os.O_RDONLY|os.O_CREATE, 0644)
 	if err != nil {
 		return
 	}
@@ -105,7 +108,7 @@ func createIndex(createdAt int64) (index map[string]Index, err error) {
 }
 
 func saveIndex(createdAt int64, index map[string]Index) error {
-	fd, err := os.OpenFile("bin/"+strconv.FormatInt(createdAt, 10)+"-index.bin", os.O_WRONLY|os.O_CREATE, 0644)
+	fd, err := os.OpenFile(makePath("index", createdAt), os.O_WRONLY|os.O_CREATE, 0644)
 	if err != nil {
 		return err
 	}
@@ -117,8 +120,12 @@ func saveIndex(createdAt int64, index map[string]Index) error {
 	return fd.Close()
 }
 
+func makePath(prefix string, createdAt int64) string {
+	return path.Join(BinDir, strconv.FormatInt(createdAt, 10)+"-"+prefix+".bin")
+}
+
 func NewSStablePartition(createdAt int64) *SStablePartition {
-	fd, err := os.OpenFile("bin/"+strconv.FormatInt(createdAt, 10)+"-partition.bin", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0644)
+	fd, err := os.OpenFile(makePath("partition", createdAt), os.O_RDWR|os.O_CREATE|os.O_APPEND, 0644)
 	if err != nil {
 		log.Panic(err)
 	}
