@@ -64,7 +64,7 @@ func (m *mem) Sync() error {
 			delete(m.storage, k)
 		}
 	}
-	return m.ssTable.ClosePartition(ssp)
+	return nil
 }
 
 func (m *mem) Len() int {
