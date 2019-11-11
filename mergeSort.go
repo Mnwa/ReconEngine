@@ -37,7 +37,7 @@ func (ssTable *ssTable) MergeSort() error {
 		return err
 	} else {
 		for _, c := range ssTable.availablePartitions {
-			if c == ssp.CreatedAt() {
+			if c == ssp.Key() {
 				continue
 			}
 			err := os.Remove(makePath("partition", c))

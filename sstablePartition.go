@@ -20,7 +20,7 @@ type SsTablePartitionStorage interface {
 	Set(key []byte, value []byte) error
 	Del(key []byte) error
 	Range(cb func(key []byte, value []byte) bool)
-	CreatedAt() int64
+	Key() int64
 	Close() error
 }
 
@@ -92,7 +92,7 @@ func (ssp *ssTablePartition) Del(key []byte) error {
 	return ssp.Set(key, []byte{removed})
 }
 
-func (ssp *ssTablePartition) CreatedAt() int64 {
+func (ssp *ssTablePartition) Key() int64 {
 	return ssp.createdAt
 }
 
