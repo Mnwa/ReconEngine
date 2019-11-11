@@ -30,7 +30,7 @@ func TestMergeSort(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	if len(ss.GetOpenedPartitions()) != 1 {
-		t.Errorf("Possible partitions more then one: %d", len(ss.GetAvailablePartitions()))
+	if ss.Len() != 1 {
+		t.Errorf("Possible partitions more then one: %d", ss.Len())
 	}
 }

@@ -11,7 +11,7 @@ func (ssTable *ssTable) MergeSort() error {
 	var mx sync.Mutex
 	mx.Lock()
 	defer mx.Unlock()
-	if len(ssTable.GetAvailablePartitions())+len(ssTable.OpenedPartitions) <= 1 {
+	if ssTable.Len() <= 1 {
 		return nil
 	}
 	values := make(map[string][]byte)
@@ -36,7 +36,7 @@ func (ssTable *ssTable) MergeSort() error {
 	if err != nil {
 		return err
 	} else {
-		for _, c := range ssTable.AvailablePartitions {
+		for _, c := range ssTable.availablePartitions {
 			if c == ssp.CreatedAt() {
 				continue
 			}
@@ -50,7 +50,7 @@ func (ssTable *ssTable) MergeSort() error {
 			}
 		}
 	}
-	ssTable.AvailablePartitions = make(ssTablePartitionKeys, 0)
-	ssTable.OpenedPartitions = ssTablePartitions{ssp}
+	ssTable.availablePartitions = make(ssTablePartitionKeys, 0)
+	ssTable.openedPartitions = ssTablePartitions{ssp}
 	return nil
 }

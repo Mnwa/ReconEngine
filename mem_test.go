@@ -39,7 +39,7 @@ func TestMem_Sync(t *testing.T) {
 	mem.Set([]byte("test"), []byte("mega test"))
 	mem.Set([]byte("test1"), []byte("mega test1"))
 	mem.Set([]byte("test2"), []byte("mega test2"))
-	prevLen := len(mem.SsTable().GetAvailablePartitions())
+	prevLen := mem.SsTable().Len()
 	err := mem.Sync()
 	if err != nil {
 		t.Error(err)
@@ -47,7 +47,7 @@ func TestMem_Sync(t *testing.T) {
 	if mem.Len() != 0 {
 		t.Error("Synced is not all data")
 	}
-	if len(mem.SsTable().GetAvailablePartitions())-prevLen != 1 {
+	if mem.SsTable().Len()-prevLen != 1 {
 		t.Error("ssTable do not synced")
 	}
 }

@@ -24,7 +24,7 @@ type SsTablePartitionStorage interface {
 	Close() error
 }
 
-type Index struct {
+type dataPosition struct {
 	Offset int64
 	Length int32
 }
@@ -32,7 +32,7 @@ type Index struct {
 // It's a part of ss table, loaded parts can be a readOnly
 type ssTablePartition struct {
 	createdAt int64
-	index     map[string]Index
+	index     map[string]dataPosition
 	fd        *os.File
 }
 
@@ -81,7 +81,7 @@ func (ssp *ssTablePartition) Set(key []byte, value []byte) error {
 	if err != nil {
 		return err
 	}
-	ssp.index[string(key)] = Index{
+	ssp.index[string(key)] = dataPosition{
 		Offset: fi.Size() - int64(n),
 		Length: int32(len(value)),
 	}
@@ -113,7 +113,7 @@ func (ssp *ssTablePartition) Close() error {
 	return nil
 }
 
-func createIndex(createdAt int64) (index map[string]Index, err error) {
+func createIndex(createdAt int64) (index map[string]dataPosition, err error) {
 	fd, err := os.OpenFile(makePath("index", createdAt), os.O_RDONLY|os.O_CREATE, 0644)
 	if err != nil {
 		return
@@ -127,12 +127,12 @@ func createIndex(createdAt int64) (index map[string]Index, err error) {
 		err = gob.NewDecoder(fd).Decode(&index)
 		return
 	} else {
-		index = make(map[string]Index)
+		index = make(map[string]dataPosition)
 		return
 	}
 }
 
-func saveIndex(createdAt int64, index map[string]Index) error {
+func saveIndex(createdAt int64, index map[string]dataPosition) error {
 	fd, err := os.OpenFile(makePath("index", createdAt), os.O_WRONLY|os.O_CREATE, 0644)
 	if err != nil {
 		return err
