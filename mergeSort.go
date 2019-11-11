@@ -2,52 +2,27 @@ package reconEngine
 
 import (
 	"bytes"
-	"log"
 	"os"
 	"sync"
 )
 
 // Merge sort algoritm (merge old partitions in bigger one)
-func MergeSort(ssTable *SsTable) error {
+func (ssTable *ssTable) MergeSort() error {
 	var mx sync.Mutex
 	mx.Lock()
 	defer mx.Unlock()
-	err := ssTable.CloseAll()
-	if err != nil {
-		log.Fatal(err)
-	}
-	if len(ssTable.PossibleToOpenPartitions) <= 1 {
+	if len(ssTable.GetAvailablePartitions())+len(ssTable.OpenedPartitions) <= 1 {
 		return nil
 	}
-	firstC := ssTable.PossibleToOpenPartitions[0]
 	values := make(map[string][]byte)
-	for _, c := range ssTable.PossibleToOpenPartitions {
-		p := ssTable.OpenPartition(c)
-		for k := range p.Index {
-			if _, ok := values[k]; !ok {
-				v, err := p.Get([]byte(k))
-				if err != nil && err != KeyRemovedErr {
-					return err
-				} else {
-					values[k] = v
-				}
-			}
-		}
-		err = ssTable.ClosePartition(p)
-		if err != nil {
-			return err
-		} else {
-			err := os.Remove(makePath("partition", p.createdAt))
-			if err != nil {
-				return err
-			}
-			err = os.Remove(makePath("index", p.createdAt))
-			if err != nil {
-				return err
-			}
-		}
-	}
-	ssp := NewSStablePartition(firstC)
+	ssTable.Range(func(createdAt int64, partitionStorage SsTablePartitionStorage) bool {
+		partitionStorage.Range(func(k []byte, v []byte) bool {
+			values[string(k)] = v
+			return true
+		})
+		return true
+	})
+	ssp := ssTable.CreatePartition()
 	for k, v := range values {
 		if !bytes.Equal(v, []byte{removed}) {
 			err := ssp.Set([]byte(k), v)
@@ -56,7 +31,26 @@ func MergeSort(ssTable *SsTable) error {
 			}
 		}
 	}
-	ssTable.PossibleToOpenPartitions = make(SsTablePartitionKeys, 0)
-	ssTable.OpenedPartitions = SsTablePartitions{ssp}
+
+	err := ssTable.CloseAll()
+	if err != nil {
+		return err
+	} else {
+		for _, c := range ssTable.AvailablePartitions {
+			if c == ssp.CreatedAt() {
+				continue
+			}
+			err := os.Remove(makePath("partition", c))
+			if err != nil {
+				return err
+			}
+			err = os.Remove(makePath("index", c))
+			if err != nil {
+				return err
+			}
+		}
+	}
+	ssTable.AvailablePartitions = make(ssTablePartitionKeys, 0)
+	ssTable.OpenedPartitions = ssTablePartitions{ssp}
 	return nil
 }

@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/gob"
-	"errors"
 	"io"
 	"log"
 	"os"
@@ -16,23 +15,41 @@ const removed = 0x04
 
 var BinDir = "bin"
 
+type SsTablePartitionStorage interface {
+	Get(key []byte) ([]byte, error)
+	Set(key []byte, value []byte) error
+	Del(key []byte) error
+	Range(cb func(key []byte, value []byte) bool)
+	CreatedAt() int64
+	Close() error
+}
+
 type Index struct {
 	Offset int64
 	Length int32
 }
 
-var ReadOnlyPartModErr = errors.New("try to modify read only partition")
-
 // It's a part of ss table, loaded parts can be a readOnly
-type SStablePartition struct {
+type ssTablePartition struct {
 	createdAt int64
-	Index     map[string]Index
+	index     map[string]Index
 	fd        *os.File
-	isLoaded  bool
 }
 
-func (ssp *SStablePartition) Get(key []byte) ([]byte, error) {
-	index, ok := ssp.Index[string(key)]
+func (ssp *ssTablePartition) Range(cb func(key []byte, value []byte) bool) {
+	for k := range ssp.index {
+		v, err := ssp.Get([]byte(k))
+		if err != nil && err != KeyRemovedErr {
+			continue
+		}
+		if !cb([]byte(k), v) {
+			break
+		}
+	}
+}
+
+func (ssp *ssTablePartition) Get(key []byte) ([]byte, error) {
+	index, ok := ssp.index[string(key)]
 	if !ok {
 		return nil, KeyNotFoundErr
 	}
@@ -50,15 +67,12 @@ func (ssp *SStablePartition) Get(key []byte) ([]byte, error) {
 	}
 
 	if bytes.Equal(val, []byte{removed}) {
-		return nil, KeyRemovedErr
+		return val, KeyRemovedErr
 	}
 	return val, nil
 }
 
-func (ssp *SStablePartition) Set(key []byte, value []byte) error {
-	if ssp.isLoaded {
-		return ReadOnlyPartModErr
-	}
+func (ssp *ssTablePartition) Set(key []byte, value []byte) error {
 	n, err := ssp.fd.Write(value)
 	if err != nil {
 		return err
@@ -67,24 +81,28 @@ func (ssp *SStablePartition) Set(key []byte, value []byte) error {
 	if err != nil {
 		return err
 	}
-	ssp.Index[string(key)] = Index{
+	ssp.index[string(key)] = Index{
 		Offset: fi.Size() - int64(n),
 		Length: int32(len(value)),
 	}
-	return saveIndex(ssp.createdAt, ssp.Index)
+	return saveIndex(ssp.createdAt, ssp.index)
 }
 
-func (ssp *SStablePartition) Del(key []byte) error {
+func (ssp *ssTablePartition) Del(key []byte) error {
 	return ssp.Set(key, []byte{removed})
 }
 
-func (ssp *SStablePartition) Close() error {
+func (ssp *ssTablePartition) CreatedAt() int64 {
+	return ssp.createdAt
+}
+
+func (ssp *ssTablePartition) Close() error {
 	err := ssp.fd.Sync()
 	if err != nil {
 		return err
 	}
 
-	err = saveIndex(ssp.createdAt, ssp.Index)
+	err = saveIndex(ssp.createdAt, ssp.index)
 	if err != nil {
 		return err
 	}
@@ -131,12 +149,8 @@ func makePath(prefix string, createdAt int64) string {
 	return path.Join(BinDir, strconv.FormatInt(createdAt, 10)+"-"+prefix+".bin")
 }
 
-func NewSStablePartition(createdAt int64) *SStablePartition {
+func NewSStablePartition(createdAt int64) SsTablePartitionStorage {
 	fd, err := os.OpenFile(makePath("partition", createdAt), os.O_RDWR|os.O_CREATE|os.O_APPEND, 0644)
-	if err != nil {
-		log.Panic(err)
-	}
-	fi, err := fd.Stat()
 	if err != nil {
 		log.Panic(err)
 	}
@@ -145,10 +159,9 @@ func NewSStablePartition(createdAt int64) *SStablePartition {
 		log.Panic(err)
 	}
 
-	return &SStablePartition{
+	return &ssTablePartition{
 		createdAt: createdAt,
 		fd:        fd,
-		Index:     index,
-		isLoaded:  fi.Size() != 0,
+		index:     index,
 	}
 }

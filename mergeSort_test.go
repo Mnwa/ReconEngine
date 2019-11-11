@@ -26,11 +26,11 @@ func TestMergeSort(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	err = MergeSort(ss)
+	err = ss.MergeSort()
 	if err != nil {
 		t.Error(err)
 	}
-	if len(ss.OpenedPartitions) != 1 {
-		t.Errorf("Possible partitions more then one: %d", len(ss.PossibleToOpenPartitions))
+	if len(ss.GetOpenedPartitions()) != 1 {
+		t.Errorf("Possible partitions more then one: %d", len(ss.GetAvailablePartitions()))
 	}
 }

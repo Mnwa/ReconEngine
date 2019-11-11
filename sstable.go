@@ -9,125 +9,119 @@ import (
 	"time"
 )
 
-type SsTablePartitions []*SStablePartition
-
-func (ssp SsTablePartitions) Len() int           { return len(ssp) }
-func (ssp SsTablePartitions) Swap(i, j int)      { ssp[i], ssp[j] = ssp[j], ssp[i] }
-func (ssp SsTablePartitions) Less(i, j int) bool { return ssp[i].createdAt > ssp[j].createdAt }
-
-type SsTablePartitionKeys []int64
-
-func (sspK SsTablePartitionKeys) Len() int           { return len(sspK) }
-func (sspK SsTablePartitionKeys) Swap(i, j int)      { sspK[i], sspK[j] = sspK[j], sspK[i] }
-func (sspK SsTablePartitionKeys) Less(i, j int) bool { return sspK[i] > sspK[j] }
-
-// Ss table realisation
-type SsTable struct {
-	OpenedPartitions         SsTablePartitions
-	PossibleToOpenPartitions SsTablePartitionKeys
+type SsTableStorage interface {
+	Get(key []byte) ([]byte, error)
+	Set(key []byte, value []byte) error
+	Del(key []byte) error
+	CreatePartition() SsTablePartitionStorage
+	ClosePartition(partition SsTablePartitionStorage) error
+	OpenPartition(createdAt int64) SsTablePartitionStorage
+	GetOpenedPartitions() []SsTablePartitionStorage
+	GetAvailablePartitions() []int64
+	Range(cb func(createdAt int64, partitionStorage SsTablePartitionStorage) bool)
+	CloseAll() error
+	MergeSort() error
 }
 
-func (ss *SsTable) CreatePartition() *SStablePartition {
-	ssp := ss.OpenPartition(time.Now().UnixNano())
+type ssTablePartitions []SsTablePartitionStorage
+
+func (ssp ssTablePartitions) Len() int           { return len(ssp) }
+func (ssp ssTablePartitions) Swap(i, j int)      { ssp[i], ssp[j] = ssp[j], ssp[i] }
+func (ssp ssTablePartitions) Less(i, j int) bool { return ssp[i].CreatedAt() > ssp[j].CreatedAt() }
+
+type ssTablePartitionKeys []int64
+
+func (sspK ssTablePartitionKeys) Len() int           { return len(sspK) }
+func (sspK ssTablePartitionKeys) Swap(i, j int)      { sspK[i], sspK[j] = sspK[j], sspK[i] }
+func (sspK ssTablePartitionKeys) Less(i, j int) bool { return sspK[i] > sspK[j] }
+
+// Ss table realisation
+type ssTable struct {
+	OpenedPartitions    ssTablePartitions
+	AvailablePartitions ssTablePartitionKeys
+}
+
+func (ssTable ssTable) Range(cb func(createdAt int64, partitionStorage SsTablePartitionStorage) bool) {
+	for _, createdAt := range ssTable.AvailablePartitions {
+		ssTable.OpenPartition(createdAt)
+	}
+	for _, p := range ssTable.OpenedPartitions {
+		if !cb(p.CreatedAt(), p) {
+			break
+		}
+	}
+}
+
+func (ssTable *ssTable) GetOpenedPartitions() []SsTablePartitionStorage {
+	return ssTable.OpenedPartitions
+}
+
+func (ssTable *ssTable) GetAvailablePartitions() []int64 {
+	return ssTable.AvailablePartitions
+}
+
+func (ssTable *ssTable) CreatePartition() SsTablePartitionStorage {
+	ssp := ssTable.OpenPartition(time.Now().UnixNano())
 	return ssp
 }
 
-func (ss *SsTable) ClosePartition(partition *SStablePartition) error {
-	for i, p := range ss.OpenedPartitions {
-		if p.createdAt == partition.createdAt {
+func (ssTable *ssTable) ClosePartition(partition SsTablePartitionStorage) error {
+	for i, p := range ssTable.OpenedPartitions {
+		if p.CreatedAt() == partition.CreatedAt() {
 			err := p.Close()
 			if err != nil {
 				return err
 			}
-			if len(ss.OpenedPartitions) > 1 {
-				ss.OpenedPartitions = append(ss.OpenedPartitions[:i], ss.OpenedPartitions[i+1:]...)
+			if len(ssTable.OpenedPartitions) > 1 {
+				ssTable.OpenedPartitions = append(ssTable.OpenedPartitions[:i], ssTable.OpenedPartitions[i+1:]...)
 			} else {
-				ss.OpenedPartitions = make(SsTablePartitions, 0)
+				ssTable.OpenedPartitions = make(ssTablePartitions, 0)
 			}
-			ss.PossibleToOpenPartitions = append(ss.PossibleToOpenPartitions, p.createdAt)
-			sort.Sort(ss.PossibleToOpenPartitions)
+			ssTable.AvailablePartitions = append(ssTable.AvailablePartitions, p.CreatedAt())
+			sort.Sort(ssTable.AvailablePartitions)
 			break
 		}
 	}
 	return nil
 }
 
-func (ss *SsTable) OpenPartition(createdAt int64) *SStablePartition {
+func (ssTable *ssTable) OpenPartition(createdAt int64) SsTablePartitionStorage {
 	partition := NewSStablePartition(createdAt)
-	ss.OpenedPartitions = append(ss.OpenedPartitions, partition)
-	sort.Sort(ss.OpenedPartitions)
+	ssTable.OpenedPartitions = append(ssTable.OpenedPartitions, partition)
+	sort.Sort(ssTable.OpenedPartitions)
 	return partition
 }
 
-func (ss *SsTable) Get(key []byte) ([]byte, error) {
-	for _, o := range ss.OpenedPartitions {
-		val, err := o.Get(key)
+func (ssTable *ssTable) Get(key []byte) (val []byte, err error) {
+	ssTable.Range(func(createdAt int64, partitionStorage SsTablePartitionStorage) bool {
+		val, err = partitionStorage.Get(key)
 		if err == KeyNotFoundErr {
-			continue
+			return true
 		}
-		return val, err
-	}
-	for i, c := range ss.PossibleToOpenPartitions {
-		o := ss.OpenPartition(c)
-		if len(ss.PossibleToOpenPartitions) > 1 {
-			ss.PossibleToOpenPartitions = append(ss.PossibleToOpenPartitions[:i], ss.PossibleToOpenPartitions[i+1:]...)
-		} else {
-			ss.PossibleToOpenPartitions = make(SsTablePartitionKeys, 0)
-		}
-		val, err := o.Get(key)
-		if err == KeyNotFoundErr {
-			continue
-		}
-		return val, err
-	}
-	return nil, KeyNotFoundErr
+		return false
+	})
+	return
 }
 
-func (ss *SsTable) Set(key []byte, val []byte) error {
-	var o *SStablePartition
-	if len(ss.OpenedPartitions) != 0 && !ss.OpenedPartitions[0].isLoaded {
-		if len(ss.PossibleToOpenPartitions) != 0 {
-			if ss.OpenedPartitions[0].createdAt > ss.PossibleToOpenPartitions[0] {
-				o = ss.OpenedPartitions[len(ss.OpenedPartitions)-1]
-			} else {
-				o = ss.CreatePartition()
-			}
-		} else {
-			o = ss.OpenedPartitions[len(ss.OpenedPartitions)-1]
-		}
-	} else {
-		o = ss.CreatePartition()
-	}
-	return o.Set(key, val)
+func (ssTable *ssTable) Set(key []byte, val []byte) (err error) {
+	ssTable.Range(func(createdAt int64, partitionStorage SsTablePartitionStorage) bool {
+		err = partitionStorage.Set(key, val)
+		return false
+	})
+	return
 }
 
-func (ss *SsTable) Del(key []byte) error {
-	for _, o := range ss.OpenedPartitions {
-		err := o.Del(key)
-		if err == KeyNotFoundErr {
-			continue
-		}
-		return err
-	}
-	for i, c := range ss.PossibleToOpenPartitions {
-		o := ss.OpenPartition(c)
-		if len(ss.PossibleToOpenPartitions) > 1 {
-			ss.PossibleToOpenPartitions = append(ss.PossibleToOpenPartitions[:i], ss.PossibleToOpenPartitions[i+1:]...)
-		} else {
-			ss.PossibleToOpenPartitions = make(SsTablePartitionKeys, 0)
-		}
-		err := o.Del(key)
-		if err == KeyNotFoundErr {
-			continue
-		}
-		return err
-	}
-	return KeyNotFoundErr
+func (ssTable *ssTable) Del(key []byte) (err error) {
+	ssTable.Range(func(createdAt int64, partitionStorage SsTablePartitionStorage) bool {
+		err = partitionStorage.Del(key)
+		return false
+	})
+	return
 }
 
-func (ss *SsTable) CloseAll() error {
-	for _, o := range ss.OpenedPartitions {
-		err := ss.ClosePartition(o)
+func (ssTable *ssTable) CloseAll() error {
+	for _, o := range ssTable.OpenedPartitions {
+		err := ssTable.ClosePartition(o)
 		if err != nil {
 			return err
 		}
@@ -135,8 +129,8 @@ func (ss *SsTable) CloseAll() error {
 	return nil
 }
 
-func NewSsTable() *SsTable {
-	var SsTable = &SsTable{}
+func NewSsTable() SsTableStorage {
+	var SsTable = &ssTable{}
 	fileInfos, err := ioutil.ReadDir(BinDir)
 	if err != nil {
 		log.Panic(err)
@@ -148,8 +142,8 @@ func NewSsTable() *SsTable {
 			if err != nil {
 				log.Panic(err)
 			}
-			SsTable.PossibleToOpenPartitions = append(SsTable.PossibleToOpenPartitions, timestamp)
-			sort.Sort(SsTable.PossibleToOpenPartitions)
+			SsTable.AvailablePartitions = append(SsTable.AvailablePartitions, timestamp)
+			sort.Sort(SsTable.AvailablePartitions)
 		}
 	}
 	return SsTable
