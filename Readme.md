@@ -1,10 +1,9 @@
-# reconEngine
---
+# ReconEngine
 It is the storage engine realised the lsm tree structure, used by [ReconDB](https://github.com/Mnwa/Recon)
 
 ## Usage
 
-#### Interface MemStorage
+### Interface MemStorage
 
 ```go
 //Base mem interface, you can implement own realisation
@@ -24,7 +23,7 @@ type MemStorage interface {
 func NewMem(ssTable SsTableStorage) MemStorage
 ```
 
-#### Interface SsTableStorage
+### Interface SsTableStorage
 
 ```go
 //Base SsTable interface, you can implement own realisation
@@ -47,7 +46,7 @@ type SsTableStorage interface {
 func NewSsTable() SsTableStorage
 ```
 
-#### Interface SsTablePartitionStorage
+### Interface SsTablePartitionStorage
 
 ```go
 //Base ss table partition interface, you can implement own realisation
@@ -66,13 +65,13 @@ type SsTablePartitionStorage interface {
 func NewSStablePartition(createdAt int64) SsTablePartitionStorage
 ```
 
-#### Directory to write saved data
+### Directory to write saved data
 ```go
 // partitions will be written here
 var BinDir = "bin"
 ```
 
-#### Errors
+### Errors
 ```go
 // Error used when key don't exists
 var KeyNotFoundErr = errors.New("can't found value by that key")
