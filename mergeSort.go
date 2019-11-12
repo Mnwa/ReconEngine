@@ -52,8 +52,8 @@ func (ssTable *ssTable) MergeSort() error {
 			}
 		}
 	}
-	ssTable.availablePartitions = make(ssTablePartitionKeys, 0)
-	ssTable.openedPartitions = ssTablePartitions{ssp}
+	ssTable.availablePartitions = ssTablePartitionKeys{ssp.Key()}
+	ssTable.openedPartitions = make(ssTablePartitions, 0)
 
 	ssTable.CreatePartition()
 	return nil
