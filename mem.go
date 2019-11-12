@@ -3,6 +3,7 @@ package reconEngine
 import (
 	"bytes"
 	"errors"
+	"strings"
 	"sync"
 )
 
@@ -27,7 +28,7 @@ func (m *mem) Scan(subStr string, cb func(key string, value []byte) bool) {
 	needNextIteration := true
 	m.ssTable.Range(func(createdAt int64, partitionStorage SsTablePartitionStorage) bool {
 		partitionStorage.Range(func(key string, value []byte) bool {
-			if _, ok := m.storage[key]; !ok {
+			if _, ok := m.storage[key]; !ok && strings.Contains(key, subStr) {
 				m.storage[key] = value
 				if !cb(key, value) {
 					needNextIteration = false
