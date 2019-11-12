@@ -9,6 +9,7 @@ import (
 	"time"
 )
 
+//Base SsTable interface, you can implement own realisation
 type SsTableStorage interface {
 	Get(key []byte) ([]byte, error)
 	Set(key []byte, value []byte) error
@@ -124,6 +125,7 @@ func (ssTable *ssTable) CloseAll() error {
 	return nil
 }
 
+// SsTable constructor, create structure realised SsTableStorage interface
 func NewSsTable() SsTableStorage {
 	var SsTable = &ssTable{}
 	fileInfos, err := ioutil.ReadDir(BinDir)

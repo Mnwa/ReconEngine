@@ -15,6 +15,7 @@ const removed = 0x04
 
 var BinDir = "bin"
 
+//Base ss table partition interface, you can implement own realisation
 type SsTablePartitionStorage interface {
 	Get(key []byte) ([]byte, error)
 	Set(key []byte, value []byte) error
@@ -149,6 +150,7 @@ func makePath(prefix string, createdAt int64) string {
 	return path.Join(BinDir, strconv.FormatInt(createdAt, 10)+"-"+prefix+".bin")
 }
 
+// SsTable partition constructor, create structure realised SsTablePartitionStorage interface
 func NewSStablePartition(createdAt int64) SsTablePartitionStorage {
 	fd, err := os.OpenFile(makePath("partition", createdAt), os.O_RDWR|os.O_CREATE|os.O_APPEND, 0644)
 	if err != nil {

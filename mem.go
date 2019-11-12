@@ -6,6 +6,7 @@ import (
 	"sync"
 )
 
+//Base mem interface, you can implement own realisation
 type MemStorage interface {
 	Get(key []byte) ([]byte, error)
 	Set(key []byte, value []byte)
@@ -75,8 +76,8 @@ func (m *mem) SsTable() SsTableStorage {
 	return m.ssTable
 }
 
-// Create mem table
-// Argument may be nil
+// Mem constructor, create structure realised MemStorage interface
+// ssTable argument may be a nil
 func NewMem(ssTable SsTableStorage) MemStorage {
 	if ssTable == nil {
 		ssTable = NewSsTable()
