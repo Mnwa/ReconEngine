@@ -1,8 +1,8 @@
 # ReconEngine
-[![Github all releases](https://img.shields.io/github/release/Mnwa/Recon.svg)](https://github.com/Mnwa/ReconEngine/releases)
-[![Go Report Card](https://goreportcard.com/badge/Mnwa/Recon)](https://goreportcard.com/report/Mnwa/ReconEngine)
-[![GitHub license](https://img.shields.io/github/license/Mnwa/Recon.svg)](https://github.com/Mnwa/ReconEngine)
-[![Repository Size](https://img.shields.io/github/repo-size/Mnwa/Recon.svg)](https://github.com/Mnwa/ReconEngine)
+[![Github all releases](https://img.shields.io/github/release/Mnwa/ReconEngine.svg)](https://github.com/Mnwa/ReconEngine/releases)
+[![Go Report Card](https://goreportcard.com/badge/Mnwa/ReconEngine)](https://goreportcard.com/report/Mnwa/ReconEngine)
+[![GitHub license](https://img.shields.io/github/license/Mnwa/ReconEngine.svg)](https://github.com/Mnwa/ReconEngine)
+[![Repository Size](https://img.shields.io/github/repo-size/Mnwa/ReconEngine.svg)](https://github.com/Mnwa/ReconEngine)
 
 It is the storage engine realised the lsm tree structure, used by [ReconDB](https://github.com/Mnwa/Recon)
 
