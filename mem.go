@@ -11,6 +11,7 @@ type MemStorage interface {
 	Get(key string) ([]byte, error)
 	Set(key string, value []byte)
 	Del(key string) error
+	Scan(subStr string, cb func(key string, value []byte) bool)
 	Sync() error
 	Len() int
 	SsTable() SsTableStorage
@@ -20,6 +21,22 @@ type MemStorage interface {
 type mem struct {
 	storage map[string][]byte
 	ssTable SsTableStorage
+}
+
+func (m *mem) Scan(subStr string, cb func(key string, value []byte) bool) {
+	needNextIteration := true
+	m.ssTable.Range(func(createdAt int64, partitionStorage SsTablePartitionStorage) bool {
+		partitionStorage.Range(func(key string, value []byte) bool {
+			if _, ok := m.storage[key]; !ok {
+				m.storage[key] = value
+				if !cb(key, value) {
+					needNextIteration = false
+				}
+			}
+			return needNextIteration
+		})
+		return needNextIteration
+	})
 }
 
 // Key not found error
@@ -34,7 +51,11 @@ func (m *mem) Get(key string) ([]byte, error) {
 		return nil, KeyNotFoundErr
 	}
 	if !ok {
-		return m.ssTable.Get(key)
+		val, err := m.ssTable.Get(key)
+		if err != nil {
+			m.storage[key] = val
+		}
+		return val, err
 	}
 	return val, nil
 }

@@ -17,7 +17,9 @@ func (ssTable *ssTable) MergeSort() error {
 	values := make(map[string][]byte)
 	ssTable.Range(func(createdAt int64, partitionStorage SsTablePartitionStorage) bool {
 		partitionStorage.Range(func(k string, v []byte) bool {
-			values[k] = v
+			if _, ok := values[k]; !ok {
+				values[k] = v
+			}
 			return true
 		})
 		return true
@@ -52,5 +54,7 @@ func (ssTable *ssTable) MergeSort() error {
 	}
 	ssTable.availablePartitions = make(ssTablePartitionKeys, 0)
 	ssTable.openedPartitions = ssTablePartitions{ssp}
+
+	ssTable.CreatePartition()
 	return nil
 }

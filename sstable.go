@@ -89,6 +89,9 @@ func (ssTable *ssTable) OpenPartition(createdAt int64) SsTablePartitionStorage {
 }
 
 func (ssTable *ssTable) Get(key string) (val []byte, err error) {
+	if ssTable.Len() == 0 {
+		ssTable.CreatePartition()
+	}
 	ssTable.Range(func(createdAt int64, partitionStorage SsTablePartitionStorage) bool {
 		val, err = partitionStorage.Get(key)
 		if err == KeyNotFoundErr {
@@ -100,6 +103,9 @@ func (ssTable *ssTable) Get(key string) (val []byte, err error) {
 }
 
 func (ssTable *ssTable) Set(key string, val []byte) (err error) {
+	if ssTable.Len() == 0 {
+		ssTable.CreatePartition()
+	}
 	ssTable.Range(func(createdAt int64, partitionStorage SsTablePartitionStorage) bool {
 		err = partitionStorage.Set(key, val)
 		return false
@@ -108,6 +114,9 @@ func (ssTable *ssTable) Set(key string, val []byte) (err error) {
 }
 
 func (ssTable *ssTable) Del(key string) (err error) {
+	if ssTable.Len() == 0 {
+		ssTable.CreatePartition()
+	}
 	ssTable.Range(func(createdAt int64, partitionStorage SsTablePartitionStorage) bool {
 		err = partitionStorage.Del(key)
 		return false
