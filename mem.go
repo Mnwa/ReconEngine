@@ -27,8 +27,10 @@ type mem struct {
 func (m *mem) Scan(subStr string, cb func(key string, value []byte) bool) {
 	needNextIteration := true
 	for key, value := range m.storage {
-		if !cb(key, value) {
-			return
+		if strings.Contains(key, subStr) {
+			if !cb(key, value) {
+				return
+			}
 		}
 	}
 	m.ssTable.Range(func(createdAt int64, partitionStorage SsTablePartitionStorage) bool {
