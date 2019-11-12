@@ -9,8 +9,8 @@ import (
 func TestMem_Get(t *testing.T) {
 	BinDir = os.TempDir()
 	var mem = NewMem(nil)
-	mem.Set([]byte("test"), []byte("mega test"))
-	v, err := mem.Get([]byte("test"))
+	mem.Set("test", []byte("mega test"))
+	v, err := mem.Get("test")
 	if err != nil {
 		t.Error(err)
 	}
@@ -22,12 +22,12 @@ func TestMem_Get(t *testing.T) {
 func TestMem_Del(t *testing.T) {
 	BinDir = os.TempDir()
 	var mem = NewMem(nil)
-	mem.Set([]byte("test"), []byte("mega test"))
-	err := mem.Del([]byte("test"))
+	mem.Set("test", []byte("mega test"))
+	err := mem.Del("test")
 	if err != nil {
 		t.Error(err)
 	}
-	_, err = mem.Get([]byte("test"))
+	_, err = mem.Get("test")
 	if err != KeyNotFoundErr {
 		t.Error("Key exists")
 	}
@@ -36,9 +36,9 @@ func TestMem_Del(t *testing.T) {
 func TestMem_Sync(t *testing.T) {
 	BinDir = os.TempDir()
 	var mem = NewMem(nil)
-	mem.Set([]byte("test"), []byte("mega test"))
-	mem.Set([]byte("test1"), []byte("mega test1"))
-	mem.Set([]byte("test2"), []byte("mega test2"))
+	mem.Set("test", []byte("mega test"))
+	mem.Set("test1", []byte("mega test1"))
+	mem.Set("test2", []byte("mega test2"))
 	prevLen := mem.SsTable().Len()
 	err := mem.Sync()
 	if err != nil {

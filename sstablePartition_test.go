@@ -10,11 +10,11 @@ import (
 func TestSStablePartition_Get(t *testing.T) {
 	BinDir = os.TempDir()
 	var ssp = NewSStablePartition(time.Now().UnixNano())
-	err := ssp.Set([]byte("test"), []byte("mega test"))
+	err := ssp.Set("test", []byte("mega test"))
 	if err != nil {
 		t.Error(err)
 	}
-	v, err := ssp.Get([]byte("test"))
+	v, err := ssp.Get("test")
 	if err != nil {
 		t.Error(err)
 	}
@@ -25,15 +25,15 @@ func TestSStablePartition_Get(t *testing.T) {
 func TestSStablePartition_Del(t *testing.T) {
 	BinDir = os.TempDir()
 	var ssp = NewSStablePartition(time.Now().UnixNano())
-	err := ssp.Set([]byte("test"), []byte("mega test"))
+	err := ssp.Set("test", []byte("mega test"))
 	if err != nil {
 		t.Error(err)
 	}
-	err = ssp.Del([]byte("test"))
+	err = ssp.Del("test")
 	if err != nil {
 		t.Error(err)
 	}
-	_, err = ssp.Get([]byte("test"))
+	_, err = ssp.Get("test")
 	if err != KeyRemovedErr {
 		t.Error("Key exists")
 	}

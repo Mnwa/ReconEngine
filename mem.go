@@ -8,9 +8,9 @@ import (
 
 //Base mem interface, you can implement own realisation
 type MemStorage interface {
-	Get(key []byte) ([]byte, error)
-	Set(key []byte, value []byte)
-	Del(key []byte) error
+	Get(key string) ([]byte, error)
+	Set(key string, value []byte)
+	Del(key string) error
 	Sync() error
 	Len() int
 	SsTable() SsTableStorage
@@ -28,8 +28,8 @@ var KeyNotFoundErr = errors.New("can't found value by that key")
 // Removed key error
 var KeyRemovedErr = errors.New("that key was removed")
 
-func (m *mem) Get(key []byte) ([]byte, error) {
-	val, ok := m.storage[string(key)]
+func (m *mem) Get(key string) ([]byte, error) {
+	val, ok := m.storage[key]
 	if ok && bytes.Equal(val, []byte{removed}) {
 		return nil, KeyNotFoundErr
 	}
@@ -39,16 +39,16 @@ func (m *mem) Get(key []byte) ([]byte, error) {
 	return val, nil
 }
 
-func (m *mem) Set(key []byte, value []byte) {
-	m.storage[string(key)] = value
+func (m *mem) Set(key string, value []byte) {
+	m.storage[key] = value
 }
 
-func (m *mem) Del(key []byte) error {
-	_, ok := m.storage[string(key)]
+func (m *mem) Del(key string) error {
+	_, ok := m.storage[key]
 	if !ok {
 		return KeyNotFoundErr
 	}
-	m.storage[string(key)] = []byte{removed}
+	m.storage[key] = []byte{removed}
 	return nil
 }
 
@@ -58,7 +58,7 @@ func (m *mem) Sync() error {
 	defer mx.Unlock()
 	ssp := m.ssTable.CreatePartition()
 	for k, v := range m.storage {
-		err := ssp.Set([]byte(k), v)
+		err := ssp.Set(k, v)
 		if err != nil {
 			return err
 		} else {

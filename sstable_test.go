@@ -9,11 +9,11 @@ import (
 func TestSsTable_Get(t *testing.T) {
 	BinDir = os.TempDir()
 	var ss = NewSsTable()
-	err := ss.Set([]byte("test"), []byte("mega test"))
+	err := ss.Set("test", []byte("mega test"))
 	if err != nil {
 		t.Error(err)
 	}
-	v, err := ss.Get([]byte("test"))
+	v, err := ss.Get("test")
 	if err != nil {
 		t.Error(err)
 	}
@@ -24,15 +24,15 @@ func TestSsTable_Get(t *testing.T) {
 func TestSsTable_Del(t *testing.T) {
 	BinDir = os.TempDir()
 	var ss = NewSsTable()
-	err := ss.Set([]byte("test"), []byte("mega test"))
+	err := ss.Set("test", []byte("mega test"))
 	if err != nil {
 		t.Error(err)
 	}
-	err = ss.Del([]byte("test"))
+	err = ss.Del("test")
 	if err != nil {
 		t.Error(err)
 	}
-	_, err = ss.Get([]byte("test"))
+	_, err = ss.Get("test")
 	if err != KeyRemovedErr {
 		t.Error("Key exists")
 	}

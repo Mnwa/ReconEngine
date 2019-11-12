@@ -11,9 +11,9 @@ import (
 
 //Base SsTable interface, you can implement own realisation
 type SsTableStorage interface {
-	Get(key []byte) ([]byte, error)
-	Set(key []byte, value []byte) error
-	Del(key []byte) error
+	Get(key string) ([]byte, error)
+	Set(key string, value []byte) error
+	Del(key string) error
 	CreatePartition() SsTablePartitionStorage
 	ClosePartition(partition SsTablePartitionStorage) error
 	OpenPartition(createdAt int64) SsTablePartitionStorage
@@ -88,7 +88,7 @@ func (ssTable *ssTable) OpenPartition(createdAt int64) SsTablePartitionStorage {
 	return partition
 }
 
-func (ssTable *ssTable) Get(key []byte) (val []byte, err error) {
+func (ssTable *ssTable) Get(key string) (val []byte, err error) {
 	ssTable.Range(func(createdAt int64, partitionStorage SsTablePartitionStorage) bool {
 		val, err = partitionStorage.Get(key)
 		if err == KeyNotFoundErr {
@@ -99,7 +99,7 @@ func (ssTable *ssTable) Get(key []byte) (val []byte, err error) {
 	return
 }
 
-func (ssTable *ssTable) Set(key []byte, val []byte) (err error) {
+func (ssTable *ssTable) Set(key string, val []byte) (err error) {
 	ssTable.Range(func(createdAt int64, partitionStorage SsTablePartitionStorage) bool {
 		err = partitionStorage.Set(key, val)
 		return false
@@ -107,7 +107,7 @@ func (ssTable *ssTable) Set(key []byte, val []byte) (err error) {
 	return
 }
 
-func (ssTable *ssTable) Del(key []byte) (err error) {
+func (ssTable *ssTable) Del(key string) (err error) {
 	ssTable.Range(func(createdAt int64, partitionStorage SsTablePartitionStorage) bool {
 		err = partitionStorage.Del(key)
 		return false

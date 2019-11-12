@@ -17,10 +17,10 @@ var BinDir = "bin"
 
 //Base ss table partition interface, you can implement own realisation
 type SsTablePartitionStorage interface {
-	Get(key []byte) ([]byte, error)
-	Set(key []byte, value []byte) error
-	Del(key []byte) error
-	Range(cb func(key []byte, value []byte) bool)
+	Get(key string) ([]byte, error)
+	Set(key string, value []byte) error
+	Del(key string) error
+	Range(cb func(key string, value []byte) bool)
 	Key() int64
 	Close() error
 }
@@ -37,20 +37,20 @@ type ssTablePartition struct {
 	fd        *os.File
 }
 
-func (ssp *ssTablePartition) Range(cb func(key []byte, value []byte) bool) {
+func (ssp *ssTablePartition) Range(cb func(key string, value []byte) bool) {
 	for k := range ssp.index {
-		v, err := ssp.Get([]byte(k))
+		v, err := ssp.Get(k)
 		if err != nil && err != KeyRemovedErr {
 			continue
 		}
-		if !cb([]byte(k), v) {
+		if !cb(k, v) {
 			break
 		}
 	}
 }
 
-func (ssp *ssTablePartition) Get(key []byte) ([]byte, error) {
-	index, ok := ssp.index[string(key)]
+func (ssp *ssTablePartition) Get(key string) ([]byte, error) {
+	index, ok := ssp.index[key]
 	if !ok {
 		return nil, KeyNotFoundErr
 	}
@@ -73,7 +73,7 @@ func (ssp *ssTablePartition) Get(key []byte) ([]byte, error) {
 	return val, nil
 }
 
-func (ssp *ssTablePartition) Set(key []byte, value []byte) error {
+func (ssp *ssTablePartition) Set(key string, value []byte) error {
 	n, err := ssp.fd.Write(value)
 	if err != nil {
 		return err
@@ -82,14 +82,14 @@ func (ssp *ssTablePartition) Set(key []byte, value []byte) error {
 	if err != nil {
 		return err
 	}
-	ssp.index[string(key)] = dataPosition{
+	ssp.index[key] = dataPosition{
 		Offset: fi.Size() - int64(n),
 		Length: int32(len(value)),
 	}
 	return saveIndex(ssp.createdAt, ssp.index)
 }
 
-func (ssp *ssTablePartition) Del(key []byte) error {
+func (ssp *ssTablePartition) Del(key string) error {
 	return ssp.Set(key, []byte{removed})
 }
 

@@ -16,8 +16,8 @@ func (ssTable *ssTable) MergeSort() error {
 	}
 	values := make(map[string][]byte)
 	ssTable.Range(func(createdAt int64, partitionStorage SsTablePartitionStorage) bool {
-		partitionStorage.Range(func(k []byte, v []byte) bool {
-			values[string(k)] = v
+		partitionStorage.Range(func(k string, v []byte) bool {
+			values[k] = v
 			return true
 		})
 		return true
@@ -25,7 +25,7 @@ func (ssTable *ssTable) MergeSort() error {
 	ssp := ssTable.CreatePartition()
 	for k, v := range values {
 		if !bytes.Equal(v, []byte{removed}) {
-			err := ssp.Set([]byte(k), v)
+			err := ssp.Set(k, v)
 			if err != nil {
 				return err
 			}

@@ -9,9 +9,9 @@ It is the storage engine realised the lsm tree structure, used by [ReconDB](http
 ```go
 //Base mem interface, you can implement own realisation
 type MemStorage interface {
-	Get(key []byte) ([]byte, error)
-	Set(key []byte, value []byte)
-	Del(key []byte) error
+	Get(key string) ([]byte, error)
+	Set(key string, value []byte)
+	Del(key string) error
 	Sync() error
 	Len() int
 	SsTable() SsTableStorage
@@ -29,9 +29,9 @@ func NewMem(ssTable SsTableStorage) MemStorage
 ```go
 //Base SsTable interface, you can implement own realisation
 type SsTableStorage interface {
-	Get(key []byte) ([]byte, error)
-	Set(key []byte, value []byte) error
-	Del(key []byte) error
+	Get(key string) ([]byte, error)
+	Set(key string, value []byte) error
+	Del(key string) error
 	CreatePartition() SsTablePartitionStorage
 	ClosePartition(partition SsTablePartitionStorage) error
 	OpenPartition(createdAt int64) SsTablePartitionStorage
@@ -52,10 +52,10 @@ func NewSsTable() SsTableStorage
 ```go
 //Base ss table partition interface, you can implement own realisation
 type SsTablePartitionStorage interface {
-	Get(key []byte) ([]byte, error)
-	Set(key []byte, value []byte) error
-	Del(key []byte) error
-	Range(cb func(key []byte, value []byte) bool)
+	Get(key string) ([]byte, error)
+	Set(key string, value []byte) error
+	Del(key string) error
+	Range(cb func(key string, value []byte) bool)
 	Key() int64
 	Close() error
 }

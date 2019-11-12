@@ -10,11 +10,11 @@ func TestMergeSort(t *testing.T) {
 	var ss = NewSsTable()
 	sspO := ss.CreatePartition()
 	sspT := ss.CreatePartition()
-	err := sspO.Set([]byte("test"), []byte("mega test"))
+	err := sspO.Set("test", []byte("mega test"))
 	if err != nil {
 		t.Error(err)
 	}
-	err = sspT.Set([]byte("test1"), []byte("mega test1"))
+	err = sspT.Set("test1", []byte("mega test1"))
 	if err != nil {
 		t.Error(err)
 	}
