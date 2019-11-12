@@ -73,10 +73,6 @@ func (m *mem) Set(key string, value []byte) {
 }
 
 func (m *mem) Del(key string) error {
-	_, ok := m.storage[key]
-	if !ok {
-		return KeyNotFoundErr
-	}
 	m.storage[key] = []byte{removed}
 	return nil
 }
