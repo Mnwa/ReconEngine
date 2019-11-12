@@ -60,7 +60,7 @@ func (m *mem) Get(key string) ([]byte, error) {
 	}
 	if !ok {
 		val, err := m.ssTable.Get(key)
-		if err != nil {
+		if err == nil {
 			m.storage[key] = val
 		}
 		return val, err
