@@ -2,14 +2,12 @@ package reconEngine
 
 import (
 	"bytes"
-	"os"
 	"testing"
 	"time"
 )
 
 func TestSStablePartition_Get(t *testing.T) {
-	BinDir = os.TempDir()
-	var ssp = NewSStablePartition(time.Now().UnixNano())
+	var ssp = NewSStablePartition(time.Now().UnixNano(), &tmp)
 	err := ssp.Set("test", []byte("mega test"))
 	if err != nil {
 		t.Error(err)
@@ -23,8 +21,7 @@ func TestSStablePartition_Get(t *testing.T) {
 	}
 }
 func TestSStablePartition_Del(t *testing.T) {
-	BinDir = os.TempDir()
-	var ssp = NewSStablePartition(time.Now().UnixNano())
+	var ssp = NewSStablePartition(time.Now().UnixNano(), &tmp)
 	err := ssp.Set("test", []byte("mega test"))
 	if err != nil {
 		t.Error(err)

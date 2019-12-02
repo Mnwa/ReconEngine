@@ -39,6 +39,7 @@ func (sspK ssTablePartitionKeys) Less(i, j int) bool { return sspK[i] > sspK[j] 
 type ssTable struct {
 	openedPartitions    ssTablePartitions
 	availablePartitions ssTablePartitionKeys
+	dir                 *string
 }
 
 func (ssTable *ssTable) Len() int {
@@ -82,7 +83,7 @@ func (ssTable *ssTable) ClosePartition(partition SsTablePartitionStorage) error 
 }
 
 func (ssTable *ssTable) OpenPartition(createdAt int64) SsTablePartitionStorage {
-	partition := NewSStablePartition(createdAt)
+	partition := NewSStablePartition(createdAt, ssTable.dir)
 	ssTable.openedPartitions = append(ssTable.openedPartitions, partition)
 	sort.Sort(ssTable.openedPartitions)
 	return partition
@@ -135,9 +136,11 @@ func (ssTable *ssTable) CloseAll() error {
 }
 
 // SsTable constructor, create structure realised SsTableStorage interface
-func NewSsTable() SsTableStorage {
-	var SsTable = &ssTable{}
-	fileInfos, err := ioutil.ReadDir(BinDir)
+func NewSsTable(dir *string) SsTableStorage {
+	var SsTable = &ssTable{
+		dir: dir,
+	}
+	fileInfos, err := ioutil.ReadDir(*dir)
 	if err != nil {
 		log.Panic(err)
 	}

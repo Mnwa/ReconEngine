@@ -1,13 +1,11 @@
 package reconEngine
 
 import (
-	"os"
 	"testing"
 )
 
 func TestMergeSort(t *testing.T) {
-	BinDir = os.TempDir()
-	var ss = NewSsTable()
+	var ss = NewSsTable(&tmp)
 	sspO := ss.CreatePartition()
 	sspT := ss.CreatePartition()
 	err := sspO.Set("test", []byte("mega test"))

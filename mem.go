@@ -36,7 +36,7 @@ func (m *mem) Scan(subStr string, cb func(key string, value []byte) bool) {
 	m.ssTable.Range(func(createdAt int64, partitionStorage SsTablePartitionStorage) bool {
 		partitionStorage.Range(func(key string, value []byte) bool {
 			if _, ok := m.storage[key]; !ok && strings.Contains(key, subStr) {
-				m.storage[key] = value
+				m.Set(key, value)
 				if !cb(key, value) {
 					needNextIteration = false
 				}
@@ -103,9 +103,10 @@ func (m *mem) SsTable() SsTableStorage {
 
 // Mem constructor, create structure realised MemStorage interface
 // ssTable argument may be a nil
-func NewMem(ssTable SsTableStorage) MemStorage {
+// dir argument that will be stored data for partitions
+func NewMem(ssTable SsTableStorage, dir *string) MemStorage {
 	if ssTable == nil {
-		ssTable = NewSsTable()
+		ssTable = NewSsTable(dir)
 	}
 	return &mem{
 		storage: make(map[string][]byte),

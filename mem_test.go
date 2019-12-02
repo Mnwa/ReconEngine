@@ -6,9 +6,10 @@ import (
 	"testing"
 )
 
+var tmp = os.TempDir()
+
 func TestMem_Get(t *testing.T) {
-	BinDir = os.TempDir()
-	var mem = NewMem(nil)
+	var mem = NewMem(nil, &tmp)
 	mem.Set("test", []byte("mega test"))
 	v, err := mem.Get("test")
 	if err != nil {
@@ -20,8 +21,7 @@ func TestMem_Get(t *testing.T) {
 }
 
 func TestMem_Del(t *testing.T) {
-	BinDir = os.TempDir()
-	var mem = NewMem(nil)
+	var mem = NewMem(nil, &tmp)
 	mem.Set("test", []byte("mega test"))
 	err := mem.Del("test")
 	if err != nil {
@@ -34,8 +34,7 @@ func TestMem_Del(t *testing.T) {
 }
 
 func TestMem_Sync(t *testing.T) {
-	BinDir = os.TempDir()
-	var mem = NewMem(nil)
+	var mem = NewMem(nil, &tmp)
 	mem.Set("test", []byte("mega test"))
 	mem.Set("test1", []byte("mega test1"))
 	mem.Set("test2", []byte("mega test2"))

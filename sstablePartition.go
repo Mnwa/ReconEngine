@@ -13,8 +13,6 @@ import (
 
 const removed = 0x04
 
-var BinDir = "bin"
-
 //Base ss table partition interface, you can implement own realisation
 type SsTablePartitionStorage interface {
 	Get(key string) ([]byte, error)
@@ -35,6 +33,7 @@ type ssTablePartition struct {
 	createdAt int64
 	index     map[string]dataPosition
 	fd        *os.File
+	dir       *string
 }
 
 func (ssp *ssTablePartition) Range(cb func(key string, value []byte) bool) {
@@ -86,7 +85,7 @@ func (ssp *ssTablePartition) Set(key string, value []byte) error {
 		Offset: fi.Size() - int64(n),
 		Length: int32(len(value)),
 	}
-	return saveIndex(ssp.createdAt, ssp.index)
+	return ssp.saveIndex()
 }
 
 func (ssp *ssTablePartition) Del(key string) error {
@@ -103,7 +102,7 @@ func (ssp *ssTablePartition) Close() error {
 		return err
 	}
 
-	err = saveIndex(ssp.createdAt, ssp.index)
+	err = ssp.saveIndex()
 	if err != nil {
 		return err
 	}
@@ -114,8 +113,8 @@ func (ssp *ssTablePartition) Close() error {
 	return nil
 }
 
-func createIndex(createdAt int64) (index map[string]dataPosition, err error) {
-	fd, err := os.OpenFile(makePath("index", createdAt), os.O_RDONLY|os.O_CREATE, 0644)
+func (ssp *ssTablePartition) createIndex() (err error) {
+	fd, err := os.OpenFile(makePath(*ssp.dir, "index", ssp.createdAt), os.O_RDONLY|os.O_CREATE, 0644)
 	if err != nil {
 		return
 	}
@@ -125,20 +124,20 @@ func createIndex(createdAt int64) (index map[string]dataPosition, err error) {
 	}
 
 	if fi.Size() != 0 {
-		err = gob.NewDecoder(fd).Decode(&index)
+		err = gob.NewDecoder(fd).Decode(&ssp.index)
 		return
 	} else {
-		index = make(map[string]dataPosition)
+		ssp.index = make(map[string]dataPosition)
 		return
 	}
 }
 
-func saveIndex(createdAt int64, index map[string]dataPosition) error {
-	fd, err := os.OpenFile(makePath("index", createdAt), os.O_WRONLY|os.O_CREATE, 0644)
+func (ssp *ssTablePartition) saveIndex() error {
+	fd, err := os.OpenFile(makePath(*ssp.dir, "index", ssp.createdAt), os.O_WRONLY|os.O_CREATE, 0644)
 	if err != nil {
 		return err
 	}
-	err = gob.NewEncoder(fd).Encode(index)
+	err = gob.NewEncoder(fd).Encode(ssp.index)
 	if err != nil {
 		return err
 	}
@@ -146,24 +145,26 @@ func saveIndex(createdAt int64, index map[string]dataPosition) error {
 	return fd.Close()
 }
 
-func makePath(prefix string, createdAt int64) string {
-	return path.Join(BinDir, strconv.FormatInt(createdAt, 10)+"-"+prefix+".bin")
+func makePath(dir, prefix string, createdAt int64) string {
+	return path.Join(dir, strconv.FormatInt(createdAt, 10)+"-"+prefix+".bin")
 }
 
 // SsTable partition constructor, create structure realised SsTablePartitionStorage interface
-func NewSStablePartition(createdAt int64) SsTablePartitionStorage {
-	fd, err := os.OpenFile(makePath("partition", createdAt), os.O_RDWR|os.O_CREATE|os.O_APPEND, 0644)
+func NewSStablePartition(createdAt int64, dir *string) SsTablePartitionStorage {
+	fd, err := os.OpenFile(makePath(*dir, "partition", createdAt), os.O_RDWR|os.O_CREATE|os.O_APPEND, 0644)
 	if err != nil {
 		log.Panic(err)
 	}
-	index, err := createIndex(createdAt)
+	ssp := &ssTablePartition{
+		createdAt: createdAt,
+		fd:        fd,
+		index:     nil,
+		dir:       dir,
+	}
+	err = ssp.createIndex()
 	if err != nil && err != io.EOF {
 		log.Panic(err)
 	}
 
-	return &ssTablePartition{
-		createdAt: createdAt,
-		fd:        fd,
-		index:     index,
-	}
+	return ssp
 }

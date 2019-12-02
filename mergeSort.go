@@ -42,11 +42,11 @@ func (ssTable *ssTable) MergeSort() error {
 			if c == ssp.Key() {
 				continue
 			}
-			err := os.Remove(makePath("partition", c))
+			err := os.Remove(makePath(*ssTable.dir, "partition", c))
 			if err != nil {
 				return err
 			}
-			err = os.Remove(makePath("index", c))
+			err = os.Remove(makePath(*ssTable.dir, "index", c))
 			if err != nil {
 				return err
 			}

@@ -25,7 +25,8 @@ type MemStorage interface {
 ```go
 // Mem constructor, create structure realised MemStorage interface
 // ssTable argument may be a nil
-func NewMem(ssTable SsTableStorage) MemStorage
+// Dir is the link to directory for data storing
+func NewMem(ssTable SsTableStorage, dir *string) MemStorage
 ```
 
 ### Interface SsTableStorage
@@ -48,7 +49,8 @@ type SsTableStorage interface {
 
 ```go
 // SsTable constructor, create structure realised SsTableStorage interface
-func NewSsTable() SsTableStorage
+// Dir is the link to directory for data storing
+func NewSsTable(dir *string) SsTableStorage
 ```
 
 ### Interface SsTablePartitionStorage
@@ -67,13 +69,8 @@ type SsTablePartitionStorage interface {
 
 ```go
 // SsTable partition constructor, create structure realised SsTablePartitionStorage interface
-func NewSStablePartition(createdAt int64) SsTablePartitionStorage
-```
-
-### Directory to write saved data
-```go
-// partitions will be written here
-var BinDir = "bin"
+// Dir is the link to directory for data storing
+func NewSStablePartition(createdAt int64, dir *string) SsTablePartitionStorage
 ```
 
 ### Errors

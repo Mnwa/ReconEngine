@@ -2,13 +2,11 @@ package reconEngine
 
 import (
 	"bytes"
-	"os"
 	"testing"
 )
 
 func TestSsTable_Get(t *testing.T) {
-	BinDir = os.TempDir()
-	var ss = NewSsTable()
+	var ss = NewSsTable(&tmp)
 	err := ss.Set("test", []byte("mega test"))
 	if err != nil {
 		t.Error(err)
@@ -22,8 +20,7 @@ func TestSsTable_Get(t *testing.T) {
 	}
 }
 func TestSsTable_Del(t *testing.T) {
-	BinDir = os.TempDir()
-	var ss = NewSsTable()
+	var ss = NewSsTable(&tmp)
 	err := ss.Set("test", []byte("mega test"))
 	if err != nil {
 		t.Error(err)
@@ -39,8 +36,7 @@ func TestSsTable_Del(t *testing.T) {
 }
 
 func TestSsTable_CreatePartition(t *testing.T) {
-	BinDir = os.TempDir()
-	var ss = NewSsTable()
+	var ss = NewSsTable(&tmp)
 	sp := ss.CreatePartition()
 	err := ss.ClosePartition(sp)
 	if err != nil {
